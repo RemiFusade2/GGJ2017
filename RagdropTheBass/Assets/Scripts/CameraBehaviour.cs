@@ -8,8 +8,10 @@ public class CameraBehaviour : MonoBehaviour
 
 	public Vector3 offset;
 
+	public float maxSpeed;
 	public float speed;
 
+	public float maxDistance;
 	public float minDistance;
 
 	// Use this for initialization
@@ -25,11 +27,17 @@ public class CameraBehaviour : MonoBehaviour
 		Vector3 fixedHeightNewCameraPosition = target.position + offset ;
 		fixedHeightNewCameraPosition = new Vector3 (fixedHeightNewCameraPosition.x, height, fixedHeightNewCameraPosition.z);
 
+		float cameraDistance = Vector3.Distance (fixedHeightNewCameraPosition, this.transform.position);
 		Vector3 cameraDirectionUnit = (fixedHeightNewCameraPosition - this.transform.position).normalized;
 
-		if ((fixedHeightNewCameraPosition - this.transform.position).magnitude > minDistance) 
+		if (cameraDistance > minDistance) 
 		{
-			if ((fixedHeightNewCameraPosition - this.transform.position).magnitude > speed) 
+			if (cameraDistance > maxDistance) 
+			{
+				this.transform.position += cameraDirectionUnit * maxSpeed;
+			}
+			else
+			if (cameraDistance > speed) 
 			{
 				this.transform.position += cameraDirectionUnit * speed;
 			}

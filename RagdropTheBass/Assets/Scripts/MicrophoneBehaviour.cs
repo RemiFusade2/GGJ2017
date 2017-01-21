@@ -7,11 +7,12 @@ public class MicrophoneBehaviour : MonoBehaviour {
 	public static float MicLoudness;
 
 	public float loudness;
+	public float[] loudnessDatas;
+	private int ID = 0;
 
 	private string _device;
 
 	public GameEngineBehaviour gameEngine;
-
 
 	//mic initialization
 	void InitMic(){
@@ -56,11 +57,19 @@ public class MicrophoneBehaviour : MonoBehaviour {
 
 		loudness = MicLoudness;
 
-		if (loudness > 0.1f) 
+		loudnessDatas [ID] = loudness;
+
+		if (ID == 4) {
+			ID = 0;
+		} else
+			ID++;
+
+		float average = AverageOfLastFrame ();
+		if (average > 0.2f)
 		{
-			//Debug.Log ("Lound" + loudness);
-			gameEngine.SendLoudInput (loudness);
-		}
+			gameEngine.SendLoudInput (Mathf.Sqrt(average));
+		}	
+		//Debug.Log (AverageOfLastFrame ());
 	}
 
 	bool _isInitialized;
@@ -103,5 +112,17 @@ public class MicrophoneBehaviour : MonoBehaviour {
 			_isInitialized=false;
 
 		}
+	}
+
+	float AverageOfLastFrame ()
+	{
+		float average = 0;
+
+		foreach (float i in loudnessDatas) {
+			average += i;
+		}
+
+		return average /= 5;
+
 	}
 }

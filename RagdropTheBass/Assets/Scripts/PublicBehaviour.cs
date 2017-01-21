@@ -18,12 +18,18 @@ public class PublicBehaviour : MonoBehaviour {
 
 	private Vector3 destination;
 
+	private float likeSinger; // between -1 and +1
+
+	public Animator animator;
+
 	// Use this for initialization
 	void Start () 
 	{
 		destOffset = Random.insideUnitCircle;
 		lastJumpTime = 0;
 		initialPosition = this.transform.position;
+
+		likeSinger = Random.Range (-0.1f, 0.5f);
 	}
 
 	public void ResolveLoudInput(float loudness)
@@ -46,25 +52,59 @@ public class PublicBehaviour : MonoBehaviour {
 	// Update is called once per frame
 	void Update () 
 	{
-		/*
-		if (Input.GetKeyDown (KeyCode.Space)) 
+		float ratioFrame = 0.05f;
+
+		Vector2 my2DPosition = new Vector2 (this.transform.position.x, this.transform.position.z);
+
+
+		// Find ragdoll singer and moves towards it
+		Vector2 moveTowardRagdollSinger = Vector2.zero;
+
+		Vector2 ragdollSinger2DPosition = new Vector2 (ragdoll.transform.position.x, ragdoll.transform.position.z);
+		float distanceWithSinger = Vector2.Distance (my2DPosition, ragdollSinger2DPosition);
+		moveTowardRagdollSinger = (ragdollSinger2DPosition - my2DPosition).normalized * likeSinger;
+
+
+		// Find closer person in crowd and move towards it
+		Vector2 moveTowardRandomPerson = Vector2.zero;
+
+		if (distanceWithSinger < 10.0f * likeSinger) 
 		{
-			Ray ray = new Ray (this.transform.position, -Vector3.up);
-			RaycastHit raycashInfo;
-			if (Physics.Raycast(ray, out raycashInfo, 1.0f) && raycashInfo.collider.tag.Equals("Ground") && (Time.time - lastJumpTime) > 0.5f ) 
-			{		
-				float dist = Vector3.Distance (this.transform.position, ragdoll.position) *0.1f;
-				float r = Random.Range (dist-0.2f, dist-0.2f);
-				if (r < 0.1f) 
+			float minDistance = float.MaxValue;
+			Vector3 targetPosition = Vector3.zero;
+			for (float r = 0; r < Mathf.PI * 2; r += Mathf.PI / 6.0f) 
+			{
+				Vector2 rayDir = new Vector2 (Mathf.Cos (r), Mathf.Sin (r));
+				Ray ray = new Ray (this.transform.position, new Vector3 (this.transform.position.x + rayDir.x, 0, this.transform.position.z + rayDir.y));
+				RaycastHit hit;
+				if (Physics.Raycast (ray, out hit, 5.0f) && hit.collider.tag.Equals ("People")) 
 				{
-					r = 0.1f;
+					float dist = Vector3.Distance (hit.point, this.transform.position);
+					if (dist < minDistance)
+					{
+						minDistance = dist;
+						targetPosition = hit.point;
+					}
 				}
-				StartCoroutine (WaitAndMovePeople (this.GetComponent<Rigidbody> (), r));
-				lastJumpTime = Time.time;
+			}
+			if (minDistance < 1.2f)
+			{
+				// don't move at all
+				moveTowardRagdollSinger = Vector2.zero;
+				moveTowardRandomPerson = Vector2.zero;
+			}
+			if (minDistance > 1.5f && minDistance <= 10.0f) 
+			{
+				moveTowardRandomPerson = new Vector2 ((targetPosition - this.transform.position).normalized.x, (targetPosition - this.transform.position).normalized.z);
 			}
 		}
-		*/
 
+
+		Vector2 moveVec = (moveTowardRandomPerson + moveTowardRagdollSinger);
+		this.transform.position += ratioFrame * new Vector3 (moveVec.x, 0, moveVec.y);
+
+
+		/*
 
 		Vector3 ragdollPositionNoHeight = new Vector3 (ragdoll.transform.position.x, this.transform.position.y, ragdoll.transform.position.z);
 		float distanceWithRagdoll = Vector3.Distance (this.transform.position, ragdollPositionNoHeight);
@@ -83,6 +123,8 @@ public class PublicBehaviour : MonoBehaviour {
 		{
 			this.transform.position += (destination - this.transform.position).normalized * 0.02f;
 		}
+
+		*/
 	}
 
 	IEnumerator WaitAndMovePeople(Rigidbody people, float loudness, float timer)
@@ -90,5 +132,11 @@ public class PublicBehaviour : MonoBehaviour {
 		yield return new WaitForSeconds (timer);
 
 		this.GetComponent<Rigidbody> ().AddForce (Vector3.up * force * loudness);
+	}
+
+
+	public void SetAnim(int animIndex)
+	{
+		animator.SetInteger ("animIndex", animIndex);
 	}
 }
