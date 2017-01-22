@@ -15,7 +15,7 @@ public class GameEngineBehaviour : MonoBehaviour {
 	public Transform destination;
 
 	public Transform peopleStart;
-	public GameObject peoplePrefab;
+	public List<GameObject> peoplePrefabs;
 	public float peopleDensity;
 
 	private float lastLoudInputTime;
@@ -44,7 +44,7 @@ public class GameEngineBehaviour : MonoBehaviour {
 	{
 		ragdollChest.AddForce (Vector3.forward * forwardForce * 3 + Vector3.up * upForce);
 
-		PublicGeneration (peopleDensity, peoplePrefab);
+		PublicGeneration (peopleDensity, peoplePrefabs);
 
 		lastLoudInputTime = 0;
 
@@ -122,16 +122,24 @@ public class GameEngineBehaviour : MonoBehaviour {
 	}
 
 
-	public void PublicGeneration(float density, GameObject prefab)
+	public void PublicGeneration(float density, List<GameObject> prefabs)
 	{
-		for (float x = -20; x < 20; x += density)
+		int minx = -10; int maxx = 10;
+		int miny = 0; int maxy = 10;
+		for (float x = minx; x < maxx; x += density)
 		{
-			for (float y = 0; y < 20; y += density)
+			for (float y = miny; y < maxy; y += density)
 			{
 				Vector3 position = peopleStart.transform.position + Vector3.right * x + Vector3.forward * y;
 
+				GameObject prefab = prefabs[Random.Range(0, prefabs.Count)];
 				GameObject newPeople = (GameObject)Instantiate (prefab, position, Quaternion.identity);
 				newPeople.transform.parent = peopleStart;
+
+				for (int i = 0; i < newPeople.transform.FindChild ("GameObject").GetChild (0).GetComponent<Renderer> ().materials.Length; i++) 
+				{
+					newPeople.transform.FindChild ("GameObject").GetChild (0).GetComponent<Renderer> ().materials [i].color = new Color (Random.Range (0.0f, 1.0f), Random.Range (0.0f, 1.0f), Random.Range (0.0f, 1.0f));
+				}
 
 				newPeople.GetComponent<PublicBehaviour> ().ragdoll = ragdollChest.transform;
 			}
