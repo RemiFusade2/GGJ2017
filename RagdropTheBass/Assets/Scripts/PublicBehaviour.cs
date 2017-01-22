@@ -22,6 +22,13 @@ public class PublicBehaviour : MonoBehaviour {
 
 	public Animator animator;
 
+	public float countdown; //delay before crowd starts to leave
+
+	void restartCountdown ()
+	{
+		countdown = 4f; //CD in seconds
+	}
+
 	// Use this for initialization
 	void Start () 
 	{
@@ -30,6 +37,8 @@ public class PublicBehaviour : MonoBehaviour {
 		initialPosition = this.transform.position;
 
 		likeSinger = Random.Range (-0.1f, 0.5f);
+
+		restartCountdown ();
 	}
 
 	public void ResolveLoudInput(float loudness)
@@ -47,12 +56,16 @@ public class PublicBehaviour : MonoBehaviour {
 			}
 			StartCoroutine (WaitAndMovePeople (this.GetComponent<Rigidbody> (), loudness, timer));
 		}
+		restartCountdown ();
+
 	}
 	
 	// Update is called once per frame
 	void Update () 
 	{
-		float ratioFrame = 0.05f;
+		countdown -= Time.deltaTime; //counting down
+
+		float ratioFrame = 0.07f;
 
 		Vector2 my2DPosition = new Vector2 (this.transform.position.x, this.transform.position.z);
 
@@ -87,20 +100,29 @@ public class PublicBehaviour : MonoBehaviour {
 					}
 				}
 			}
-			if (minDistance < 1.2f)
+			if (minDistance < 0)
 			{
 				// don't move at all
 				moveTowardRagdollSinger = Vector2.zero;
 				moveTowardRandomPerson = Vector2.zero;
 			}
-			if (minDistance > 1.5f && minDistance <= 10.0f) 
+			if (minDistance > 1f && minDistance <= 10.0f) 
 			{
 				moveTowardRandomPerson = new Vector2 ((targetPosition - this.transform.position).normalized.x, (targetPosition - this.transform.position).normalized.z);
 			}
 		}
 
 
-		Vector2 moveVec = (moveTowardRandomPerson + moveTowardRagdollSinger);
+		Vector2 moveVec = Vector2.zero; //moved definition up here
+		if (countdown >= 0f) {
+			//normal behaviour
+			moveVec = (moveTowardRandomPerson + moveTowardRagdollSinger);
+		} else {
+			//going away
+			moveVec = (-moveTowardRandomPerson - moveTowardRagdollSinger);
+			animator.SetInteger ("animIndex", -1);
+		}
+
 		this.transform.position += ratioFrame * new Vector3 (moveVec.x, 0, moveVec.y);
 
 

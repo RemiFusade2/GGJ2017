@@ -20,7 +20,7 @@ public class RagdollBehaviour : MonoBehaviour {
 		
 	}
 
-	public void PushRagdoll (float force, Vector2 direction)
+	public bool CanBePushed()
 	{
 		bool canBePushed = false;
 
@@ -38,8 +38,12 @@ public class RagdollBehaviour : MonoBehaviour {
 				}
 			}
 		}
+		return canBePushed;
+	}
 
-		if (canBePushed)
+	public void PushRagdoll (float force, Vector2 direction)
+	{
+		if (CanBePushed())
 		{
 			StartCoroutine (WaitAndPushRagdoll (force * ragdollForce, direction, 0.01f));
 		}

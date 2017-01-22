@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityStandardAssets.ImageEffects;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class GameEngineBehaviour : MonoBehaviour {
 
@@ -25,6 +28,16 @@ public class GameEngineBehaviour : MonoBehaviour {
 	private int indexDirection;
 
 
+	public Text scoreText;
+	public Text bestScoreText;
+
+	private float timeInAir;
+	private float totalTimeInAir;
+
+	public dropthatbase musicManager;
+
+	private bool gameOver;
+
 
 	public void SendLoudInput (float loudness)
 	{
@@ -35,7 +48,7 @@ public class GameEngineBehaviour : MonoBehaviour {
 			{
 				child.GetComponent<PublicBehaviour> ().ResolveLoudInput (loudness);
 			}
-			ragdoll.PushRagdoll (loudness, 0.2f*((pushDirection == 1)?(Vector2.left):(pushDirection == 2)?(Vector2.right):(pushDirection == 3)?(Vector2.up):(pushDirection == 4)?(Vector2.down):(Vector2.zero)));
+			ragdoll.PushRagdoll (loudness, 0.2f*((pushDirection == 1)?(Vector2.right):(pushDirection == 2)?(Vector2.left):(pushDirection == 3)?(Vector2.up):(pushDirection == 4)?(Vector2.down):(Vector2.zero)));
 		}
 	}
 
@@ -57,6 +70,10 @@ public class GameEngineBehaviour : MonoBehaviour {
 		possibleDirections.Add (4);
 
 		StartCoroutine (WaitAndChangeDirection (5.0f));
+
+		timeInAir = 0;
+		totalTimeInAir = 0;
+		gameOver = false;
 	}
 
 	IEnumerator WaitAndChangeDirection(float timer)
@@ -119,12 +136,41 @@ public class GameEngineBehaviour : MonoBehaviour {
 			ragdollChest.AddForce(Vector3.up * upForce + Vector3.right * forwardForce);
 		}
 		*/
+
+		if (ragdoll.CanBePushed () || gameOver) 
+		{
+			timeInAir = 0;			
+		} 
+		else
+		{
+			timeInAir += Time.deltaTime;
+			totalTimeInAir += Time.deltaTime;
+		}
+
+		if (timeInAir > 0) 
+		{
+			bestScoreText.text = Mathf.Round(1000*totalTimeInAir)/1000.0f + "s";
+			scoreText.text = Mathf.Round(1000*timeInAir)/1000.0f  + "s in air!";
+		} 
+		else 
+		{
+			scoreText.text = "";
+		}
+
+
+		if (totalTimeInAir > 15.0f) {
+			musicManager.SetMusicState (6);
+		} else if (totalTimeInAir > 5.0f) {
+			musicManager.SetMusicState (3);
+		}
+			
+			
 	}
 
 
 	public void PublicGeneration(float density, List<GameObject> prefabs)
 	{
-		int minx = -10; int maxx = 10;
+		int minx = -5; int maxx = 5;
 		int miny = 0; int maxy = 10;
 		for (float x = minx; x < maxx; x += density)
 		{
@@ -144,5 +190,24 @@ public class GameEngineBehaviour : MonoBehaviour {
 				newPeople.GetComponent<PublicBehaviour> ().ragdoll = ragdollChest.transform;
 			}
 		}
+	}
+
+	public GameObject camera;
+
+	public void GameOver()
+	{
+		if (!gameOver) {
+			camera.GetComponent<Grayscale> ().enabled = true;
+			gameOver = true;
+			musicManager.StopMusic ();
+			StartCoroutine (WaitAndReloadLevel (2.0f));
+		}
+	}
+
+	IEnumerator WaitAndReloadLevel(float timer)
+	{
+		yield return new WaitForSeconds (timer);
+
+		SceneManager.LoadScene ("scene1");
 	}
 }
